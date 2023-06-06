@@ -25,4 +25,5 @@ enabled_worlds:
   - world
 # list the worlds you want to disable the plugin on.
 disabled_worlds:
-  - world2```
+  - world2
+  ```
