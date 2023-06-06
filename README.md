@@ -31,3 +31,9 @@ enabled_worlds:
 disabled_worlds:
   - world2
   ```
+
+# Todo
+
+- [ ] Implement auto pick up for mobs
+- [ ] Implement auto xp for mobs
+- [ ] Different message types (message, actionbar)
