@@ -20,15 +20,20 @@ notify you.
 
 # Config
 
-```# full inventory message: use '&' symbol for color codes
-full_inventory_message: "&cYour inventory is now &6full!"
+```# Config Version (DO NOT TOUCH)
+version: 1.1.0
+# full inventory message: use '&' symbol for color codes
+full_inventory_message: "&cYour inventory is now full!"
 # auto collecting experience true = enable, false = disable
 auto_experience: true
 # list the worlds you want to enable the plugin on.
 enabled_worlds:
   - world
+  - world2
 # list the worlds you want to disable the plugin on.
 disabled_worlds:
+  - world3
+
   - world2
   ```
 
