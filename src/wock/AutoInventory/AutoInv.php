@@ -158,32 +158,33 @@ class AutoInv extends PluginBase implements Listener {
         $autoExpEnabled = $config->get("auto_experience", true);
         $dropOnFullInv = $config->get("drop-on-full-inv", true);
 
-        if ($autoExpEnabled && $cause instanceof EntityDamageByEntityEvent) {
-            $damager = $cause->getDamager();
-            if ($damager instanceof Player) {
-                $damager->getXpManager()->addXp($entity->getXpDropAmount());
-                $event->setXpDropAmount(0);
-            }
-        }
-
-        if ($dropOnFullInv) {
-            $drops = $event->getDrops();
-            $player = $entity->getLastDamageCause()->getDamager();
-
-            if ($player instanceof Player) {
-                $inventory = $player->getInventory();
-                foreach ($drops as $drop) {
-                    if (!$inventory->canAddItem($drop)) {
-                        return;
-                    }
-                    $inventory->addItem($drop);
+        if ($cause instanceof EntityDamageByEntityEvent) {
+            if ($autoExpEnabled) {
+                $damager = $cause->getDamager();
+                if ($damager instanceof Player) {
+                    $damager->getXpManager()->addXp($entity->getXpDropAmount());
+                    $event->setXpDropAmount(0);
                 }
             }
 
-            $event->setDrops([]);
+            if ($dropOnFullInv) {
+                $drops = $event->getDrops();
+                $damager = $cause->getDamager();
+
+                if ($damager instanceof Player) {
+                    $inventory = $damager->getInventory();
+                    foreach ($drops as $drop) {
+                        if (!$inventory->canAddItem($drop)) {
+                            return;
+                        }
+                        $inventory->addItem($drop);
+                    }
+                }
+
+                $event->setDrops([]);
+            }
         }
     }
-
 
     public function showFullInventoryMessage(Player $player)
     {
