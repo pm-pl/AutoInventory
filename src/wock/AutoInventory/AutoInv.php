@@ -3,27 +3,34 @@
 namespace wock\AutoInventory;
 
 use pocketmine\event\block\BlockBreakEvent;
-use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\item\VanillaItems;
+use pocketmine\event\player\PlayerDeathEvent;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 
 class AutoInv extends PluginBase implements Listener {
 
-    /** @var string[] */
-    public $enabledWorlds;
+    /** @var AutoInv */
+    private static $instance;
 
     /** @var string[] */
-    public $disabledWorlds;
+    public array $enabledWorlds;
+
+    /** @var string[] */
+    public array $disabledWorlds;
+
+    public function onLoad(): void
+    {
+        self::$instance = $this;
+    }
 
     public function onEnable(): void
     {
         // Load the plugin configuration
         $this->saveDefaultConfig();
         $this->reloadConfig();
+        $this->updateConfig();
 
         // Get the enabled and disabled worlds from the configuration
         $this->enabledWorlds = $this->getConfig()->get("enabled_worlds", []);
@@ -41,6 +48,28 @@ class AutoInv extends PluginBase implements Listener {
     public function isWorldDisabled(string $worldName): bool
     {
         return in_array($worldName, $this->disabledWorlds);
+    }
+
+    public function updateConfig(): void
+    {
+        $currentVersion = $this->getConfig()->get("version", null);
+        $latestVersion = "1.1.0";
+
+        if ($currentVersion === null) {
+            // Update specific config values (IGNORE)
+            $config = $this->getConfig();
+            $config->set("auto_experience", $config->get("auto_experience_enable", true));
+            $config->remove("auto_experience_enable");
+
+            $config->set("version", $latestVersion);
+            $config->save();
+        } elseif ($currentVersion !== $latestVersion) {
+            $config = $this->getConfig();
+            // other necessary updates here (FOR FUTURE IGNORE)
+
+            $config->set("version", $latestVersion);
+            $config->save();
+        }
     }
 
     public function onBlockBreak(BlockBreakEvent $event): void
@@ -74,9 +103,9 @@ class AutoInv extends PluginBase implements Listener {
             }
         } elseif (in_array($worldName, $disabledWorlds)) {
             // The world is in the disabled list, do not execute the method
-            return;
         }
     }
+    
 
     public function showFullInventoryPopup(Player $player)
     {
@@ -87,5 +116,10 @@ class AutoInv extends PluginBase implements Listener {
         $formattedMessage = str_replace('&', '§', $message);
 
         $player->sendTitle($formattedMessage);
+    }
+
+    public static function getInstance(): AutoInv
+    {
+        return self::$instance;
     }
 }
