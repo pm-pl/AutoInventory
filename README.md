@@ -37,4 +37,4 @@ disabled_worlds:
 - [ ] Implement auto pick up for mobs
 - [ ] Implement auto xp for mobs
 - [ ] Different message types (message, actionbar)
-- [ ] Auto config updater
+- [x] Auto config updater
