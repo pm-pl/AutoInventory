@@ -39,7 +39,8 @@ disabled_worlds:
 
 # Todo
 
-- [ ] Implement auto pick up for mobs
-- [ ] Implement auto xp for mobs
-- [ ] Different message types (message, actionbar)
+- [x] Implement auto pick up for mobs
+- [x] Implement auto xp for mobs
+- [x] Auto XP for players
+- [x] Different message types (message, actionbar)
 - [x] Auto config updater
