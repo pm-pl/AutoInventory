@@ -2,7 +2,9 @@
 
 namespace wock\AutoInventory;
 
+use pocketmine\entity\Entity;
 use pocketmine\event\block\BlockBreakEvent;
+use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerDeathEvent;
@@ -12,7 +14,7 @@ use pocketmine\plugin\PluginBase;
 class AutoInv extends PluginBase implements Listener {
 
     /** @var AutoInv */
-    private static $instance;
+    private static AutoInv $instance;
 
     /** @var string[] */
     public array $enabledWorlds;
@@ -53,19 +55,28 @@ class AutoInv extends PluginBase implements Listener {
     public function updateConfig(): void
     {
         $currentVersion = $this->getConfig()->get("version", null);
-        $latestVersion = "1.1.0";
+        $latestVersion = "1.1.1";
 
         if ($currentVersion === null) {
-            // Update specific config values (IGNORE)
+            // Add the message_type option
             $config = $this->getConfig();
+            $config->set("message_type", "title");
+
+            // Update specific config values (IGNORE)
             $config->set("auto_experience", $config->get("auto_experience_enable", true));
             $config->remove("auto_experience_enable");
 
             $config->set("version", $latestVersion);
             $config->save();
         } elseif ($currentVersion !== $latestVersion) {
+            // Perform other necessary updates here (FOR FUTURE IGNORE)
+
+            // Check if the message_type option exists and add it if necessary
             $config = $this->getConfig();
-            // other necessary updates here (FOR FUTURE IGNORE)
+            if (!$config->exists("message_type")) {
+                $config->set("message_type", "title");
+                $config->save();
+            }
 
             $config->set("version", $latestVersion);
             $config->save();
@@ -79,20 +90,37 @@ class AutoInv extends PluginBase implements Listener {
         $autoExpEnabled = $config->get("auto_experience", true);
         $enabledWorlds = $config->get("enabled_worlds", []);
         $disabledWorlds = $config->get("disabled_worlds", []);
+        $dropOnFullInv = $config->get("drop-on-full-inv", true); // Read the config option
 
         $worldName = $player->getWorld()->getFolderName();
 
         if (in_array($worldName, $enabledWorlds)) {
             $drops = $event->getDrops();
             $inventory = $player->getInventory();
+            $dropItems = [];
+
             foreach ($drops as $drop) {
                 if (!$inventory->canAddItem($drop)) {
-                    $event->cancel();
-                    $this->showFullInventoryPopup($player);
-                    return;
+                    if ($dropOnFullInv) {
+                        // Add the items to the dropItems array
+                        $dropItems[] = $drop;
+                    } else {
+                        // Cancel the block break event
+                        $event->cancel();
+                        $this->showFullInventoryMessage($player);
+                    }
+                } else {
+                    $inventory->addItem($drop);
                 }
-                $inventory->addItem($drop);
             }
+
+            // Drop the items on the ground if dropItems array is not empty
+            if (!empty($dropItems)) {
+                foreach ($dropItems as $dropItem) {
+                    $player->getWorld()->dropItem($player->getPosition(), $dropItem);
+                }
+            }
+
             $event->setDrops([]);
 
             if ($autoExpEnabled) {
@@ -105,17 +133,78 @@ class AutoInv extends PluginBase implements Listener {
             // The world is in the disabled list, do not execute the method
         }
     }
-    
 
-    public function showFullInventoryPopup(Player $player)
+    public function onPlayerDeath(PlayerDeathEvent $event): void {
+        $player = $event->getPlayer();
+        $cause = $player->getLastDamageCause();
+        $config = $this->getConfig();
+        $autoExpEnabled = $config->get("auto_experience", true);
+        if ($autoExpEnabled) {
+            if($cause instanceof EntityDamageByEntityEvent){
+                $damager = $cause->getDamager();
+                if($damager instanceof Player){
+                    $damager->getXpManager()->addXp($player->getXpDropAmount());
+                    $event->setXpDropAmount(0);
+                }
+            }
+        }
+    }
+
+    public function onEntityDeath(EntityDeathEvent $event): void
+    {
+        $entity = $event->getEntity();
+        $cause = $entity->getLastDamageCause();
+        $config = $this->getConfig();
+        $autoExpEnabled = $config->get("auto_experience", true);
+        $dropOnFullInv = $config->get("drop-on-full-inv", true);
+
+        if ($autoExpEnabled && $cause instanceof EntityDamageByEntityEvent) {
+            $damager = $cause->getDamager();
+            if ($damager instanceof Player) {
+                $damager->getXpManager()->addXp($entity->getXpDropAmount());
+                $event->setXpDropAmount(0);
+            }
+        }
+
+        if ($dropOnFullInv) {
+            $drops = $event->getDrops();
+            $player = $entity->getLastDamageCause()->getDamager();
+
+            if ($player instanceof Player) {
+                $inventory = $player->getInventory();
+                foreach ($drops as $drop) {
+                    if (!$inventory->canAddItem($drop)) {
+                        return;
+                    }
+                    $inventory->addItem($drop);
+                }
+            }
+
+            $event->setDrops([]);
+        }
+    }
+
+
+    public function showFullInventoryMessage(Player $player)
     {
         $config = $this->getConfig();
         $message = $config->get("full_inventory_message", "Your inventory is now full!");
+        $messageType = strtolower($config->get("message_type", "title")); // Get the message type from the config
 
-        // Replace '&' with '§' for color formatting
         $formattedMessage = str_replace('&', '§', $message);
 
-        $player->sendTitle($formattedMessage);
+        switch ($messageType) {
+            case "title":
+                $player->sendTitle($formattedMessage);
+                break;
+            case "actionbar":
+                $player->sendActionBarMessage($formattedMessage);
+                break;
+            case "chat":
+            default:
+                $player->sendMessage($formattedMessage);
+                break;
+        }
     }
 
     public static function getInstance(): AutoInv
