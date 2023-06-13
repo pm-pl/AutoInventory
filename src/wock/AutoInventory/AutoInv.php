@@ -55,12 +55,13 @@ class AutoInv extends PluginBase implements Listener {
     public function updateConfig(): void
     {
         $currentVersion = $this->getConfig()->get("version", null);
-        $latestVersion = "1.1.1";
+        $latestVersion = "1.1.2";
 
         if ($currentVersion === null) {
-            // Add the message_type option
+            // Add the message_type and drop-on-full-inv options
             $config = $this->getConfig();
             $config->set("message_type", "title");
+            $config->set("drop-on-full-inv", true);
 
             // Update specific config values (IGNORE)
             $config->set("auto_experience", $config->get("auto_experience_enable", true));
@@ -71,11 +72,13 @@ class AutoInv extends PluginBase implements Listener {
         } elseif ($currentVersion !== $latestVersion) {
             // Perform other necessary updates here (FOR FUTURE IGNORE)
 
-            // Check if the message_type option exists and add it if necessary
+            // Check if the message_type and drop-on-full-inv options exist and add them if necessary
             $config = $this->getConfig();
             if (!$config->exists("message_type")) {
                 $config->set("message_type", "title");
-                $config->save();
+            }
+            if (!$config->exists("drop-on-full-inv")) {
+                $config->set("drop-on-full-inv", true);
             }
 
             $config->set("version", $latestVersion);
@@ -195,15 +198,15 @@ class AutoInv extends PluginBase implements Listener {
         $formattedMessage = str_replace('&', '§', $message);
 
         switch ($messageType) {
-            case "title":
-                $player->sendTitle($formattedMessage);
-                break;
             case "actionbar":
                 $player->sendActionBarMessage($formattedMessage);
                 break;
             case "chat":
-            default:
                 $player->sendMessage($formattedMessage);
+                break;
+            case "title":
+            default:
+                $player->sendTitle($formattedMessage);
                 break;
         }
     }
