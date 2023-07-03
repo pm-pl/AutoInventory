@@ -29,16 +29,13 @@ class AutoInv extends PluginBase implements Listener {
 
     public function onEnable(): void
     {
-        // Load the plugin configuration
         $this->saveDefaultConfig();
         $this->reloadConfig();
         $this->updateConfig();
 
-        // Get the enabled and disabled worlds from the configuration
         $this->enabledWorlds = $this->getConfig()->get("enabled_worlds", []);
         $this->disabledWorlds = $this->getConfig()->get("disabled_worlds", []);
 
-        // Register the event listener
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
 
@@ -58,7 +55,7 @@ class AutoInv extends PluginBase implements Listener {
         $latestVersion = "1.1.2";
 
         if ($currentVersion === null) {
-            // Add the message_type and drop-on-full-inv options
+            // Add the options
             $config = $this->getConfig();
             $config->set("message_type", "title");
             $config->set("drop-on-full-inv", true);
@@ -72,7 +69,7 @@ class AutoInv extends PluginBase implements Listener {
         } elseif ($currentVersion !== $latestVersion) {
             // Perform other necessary updates here (FOR FUTURE IGNORE)
 
-            // Check if the message_type and drop-on-full-inv options exist and add them if necessary
+            // Check if options exist and add them if necessary
             $config = $this->getConfig();
             if (!$config->exists("message_type")) {
                 $config->set("message_type", "title");
@@ -86,6 +83,9 @@ class AutoInv extends PluginBase implements Listener {
         }
     }
 
+     /**
+     * @priority HIGHEST
+     */
     public function onBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
@@ -105,10 +105,8 @@ class AutoInv extends PluginBase implements Listener {
             foreach ($drops as $drop) {
                 if (!$inventory->canAddItem($drop)) {
                     if ($dropOnFullInv) {
-                        // Add the items to the dropItems array
                         $dropItems[] = $drop;
                     } else {
-                        // Cancel the block break event
                         $event->cancel();
                         $this->showFullInventoryMessage($player);
                     }
@@ -117,7 +115,6 @@ class AutoInv extends PluginBase implements Listener {
                 }
             }
 
-            // Drop the items on the ground if dropItems array is not empty
             if (!empty($dropItems)) {
                 foreach ($dropItems as $dropItem) {
                     $player->getWorld()->dropItem($player->getPosition(), $dropItem);
@@ -127,7 +124,6 @@ class AutoInv extends PluginBase implements Listener {
             $event->setDrops([]);
 
             if ($autoExpEnabled) {
-                // Give experience to the player
                 $xpDrops = $event->getXpDropAmount();
                 $player->getXpManager()->addXp($xpDrops);
                 $event->setXpDropAmount(0);
@@ -193,7 +189,7 @@ class AutoInv extends PluginBase implements Listener {
     {
         $config = $this->getConfig();
         $message = $config->get("full_inventory_message", "Your inventory is now full!");
-        $messageType = strtolower($config->get("message_type", "title")); // Get the message type from the config
+        $messageType = strtolower($config->get("message_type", "title")); 
 
         $formattedMessage = str_replace('&', '§', $message);
 
