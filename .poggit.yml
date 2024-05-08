@@ -1,4 +1,4 @@
---- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/iLVOEWOCK/AutoInventory
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/ecstsylove/AutoInventory
 build-by-default: true
 branches:
 - main
